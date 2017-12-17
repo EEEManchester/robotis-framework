@@ -47,7 +47,7 @@ RobotisController::RobotisController()
     stop_timer_(false),
     init_pose_loaded_(false),
     timer_thread_(0),
-    controller_mode_(MotionModuleMode),
+    controller_mode_(DirectControlMode),
     DEBUG_PRINT(false),
     robot_(0),
     gazebo_mode_(false),
@@ -61,6 +61,7 @@ void RobotisController::initializeSyncWrite()
   if (gazebo_mode_ == true)
     return;
 
+  ROS_INFO("INITIALISING SYNC WRITE");
   //ROS_INFO("FIRST BULKREAD");
   for (auto& it : port_to_bulk_read_)
     it.second->txRxPacket();
@@ -531,8 +532,8 @@ void RobotisController::initializeDevice(const std::string init_file_path)
       port_to_bulk_read_[dxl->port_name_]->addParam(dxl->id_, bulkread_start_addr, bulkread_data_length);
 
     // Torque ON
-    if (writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1) != COMM_SUCCESS)
-      writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1);
+    // if (writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1) != COMM_SUCCESS)
+    //   writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1);
   }
 
   for (auto& it : robot_->sensors_)
@@ -633,6 +634,10 @@ void RobotisController::msgQueueThread()
                                                                &RobotisController::setControllerModeCallback, this);
   ros::Subscriber joint_states_sub        = ros_node.subscribe("/robotis/set_joint_states", 10,
                                                                &RobotisController::setJointStatesCallback, this);
+
+  ros::Subscriber sync_write_multi_sub     = ros_node.subscribe("/robotis/sync_write_multi", 10,
+                                                              &RobotisController::syncWriteMultiCallback, this);
+
 
   ros::Subscriber gazebo_joint_states_sub;
   if (gazebo_mode_ == true)
@@ -1113,8 +1118,17 @@ void RobotisController::process()
   }
   else if (controller_mode_ == DirectControlMode)
   {
+
     if(gazebo_mode_ == false)
     {
+      // SyncRead Rx
+      for (auto& it : port_to_sync_read_)
+      {
+        ROS_INFO("DCM here");
+        robot_->ports_[it.first]->setPacketTimeout(0.0);
+        it.second->rxPacket();
+      }
+
       // BulkRead Rx
       for (auto& it : port_to_bulk_read_)
       {
@@ -1515,7 +1529,7 @@ void RobotisController::writeControlTableCallback(const robotis_controller_msgs:
 
   direct_sync_write_.push_back(new dynamixel::GroupSyncWrite(port, packet_handler, item->address_, msg->data_length));
   direct_sync_write_[direct_sync_write_.size() - 1]->addParam(device->id_, (uint8_t *)(msg->data.data()));
-  
+
 //  fprintf(stderr, "[WriteControlTable] %s -> %s : ", msg->joint_name.c_str(), msg->start_item_name.c_str());
 //  for (auto &dt : msg->data)
 //	  fprintf(stderr, "%02X ", dt);
@@ -1604,6 +1618,106 @@ void RobotisController::syncWriteItemCallback(const robotis_controller_msgs::Syn
       data[2] = DXL_LOBYTE(DXL_HIWORD((uint32_t)msg->value[i]));
       data[3] = DXL_HIBYTE(DXL_HIWORD((uint32_t)msg->value[i]));
     }
+    direct_sync_write_[idx]->addParam(device->id_, data);
+    delete[] data;
+
+    queue_mutex_.unlock();
+  }
+}
+
+void RobotisController::syncWriteMultiCallback(const robotis_controller_msgs::SyncWriteMulti::ConstPtr &msg)
+{
+  for (int i = 0; i < msg->joint_name.size(); i++)
+  {
+    Device           *device;
+    // Check joint name
+    auto d_it1 = robot_->dxls_.find(msg->joint_name[i]);
+    if (d_it1 != robot_->dxls_.end())
+    {
+      device = d_it1->second;
+    }
+    else
+    {
+      auto d_it2 = robot_->sensors_.find(msg->joint_name[i]);
+      if (d_it2 != robot_->sensors_.end())
+      {
+        device = d_it2->second;
+      }
+      else
+      {
+        ROS_WARN("[SyncWriteItem] Unknown device : %s", msg->joint_name[i].c_str());
+        continue;
+      }
+    }
+
+//    ControlTableItem *item  = device->ctrl_table_[msg->item_name];
+    // Check control item
+    ControlTableItem *item  = NULL;
+    auto item_it = device->ctrl_table_.find(msg->item_name);
+    if(item_it != device->ctrl_table_.end())
+    {
+      item = item_it->second;
+    }
+    else
+    {
+      ROS_WARN("SyncWriteItem] Unknown item : %s", msg->item_name.c_str());
+      continue;
+    }
+
+    dynamixel::PortHandler   *port           = robot_->ports_[device->port_name_];
+    dynamixel::PacketHandler *packet_handler = dynamixel::PacketHandler::getPacketHandler(device->protocol_version_);
+
+    if (item->access_type_ == Read)
+      continue;
+
+    queue_mutex_.lock();
+
+    int idx = 0;
+    if (direct_sync_write_.size() == 0)
+    {
+      direct_sync_write_.push_back(new dynamixel::GroupSyncWrite(port, packet_handler, item->address_, msg->data_length));
+      idx = 0;
+    }
+    else
+    {
+      for (idx = 0; idx < direct_sync_write_.size(); idx++)
+      {
+        if (direct_sync_write_[idx]->getPortHandler() == port && direct_sync_write_[idx]->getPacketHandler() == packet_handler)
+          break;
+      }
+
+      if (idx == direct_sync_write_.size())
+        direct_sync_write_.push_back(new dynamixel::GroupSyncWrite(port, packet_handler, item->address_, msg->data_length));
+    }
+
+    uint8_t *data = new uint8_t[msg->data_length];
+    if (msg->data_length == 1)
+      data[0] = (uint8_t) msg->value[i];
+    else if (msg->data_length == 2)
+    {
+      data[0] = DXL_LOBYTE((uint16_t )msg->value[i]);
+      data[1] = DXL_HIBYTE((uint16_t )msg->value[i]);
+    }
+    else if (msg->data_length == 4)
+    {
+      data[0] = DXL_LOBYTE(DXL_LOWORD((uint32_t)msg->value[i]));
+      data[1] = DXL_HIBYTE(DXL_LOWORD((uint32_t)msg->value[i]));
+      data[2] = DXL_LOBYTE(DXL_HIWORD((uint32_t)msg->value[i]));
+      data[3] = DXL_HIBYTE(DXL_HIWORD((uint32_t)msg->value[i]));
+    }
+    else if (msg->data_length == 8)
+    {
+      data[0] = DXL_LOBYTE(DXL_LOWORD((uint32_t)msg->value[i*2]));
+      data[1] = DXL_HIBYTE(DXL_LOWORD((uint32_t)msg->value[i*2]));
+      data[2] = DXL_LOBYTE(DXL_HIWORD((uint32_t)msg->value[i*2]));
+      data[3] = DXL_HIBYTE(DXL_HIWORD((uint32_t)msg->value[i*2]));
+
+      data[4] = DXL_LOBYTE(DXL_LOWORD((uint32_t)msg->value[i*2+1]));
+      data[5] = DXL_HIBYTE(DXL_LOWORD((uint32_t)msg->value[i*2+1]));
+      data[6] = DXL_LOBYTE(DXL_HIWORD((uint32_t)msg->value[i*2+1]));
+      data[7] = DXL_HIBYTE(DXL_HIWORD((uint32_t)msg->value[i*2+1]));
+    }
+
     direct_sync_write_[idx]->addParam(device->id_, data);
     delete[] data;
 
@@ -2429,4 +2543,3 @@ int RobotisController::regWrite(const std::string joint_name, uint16_t address, 
 
   return pkt_handler->regWriteTxRx(port_handler, dxl->id_, address, length, data, error);
 }
-

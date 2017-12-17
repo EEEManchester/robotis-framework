@@ -48,6 +48,7 @@
 
 #include "robotis_controller_msgs/WriteControlTable.h"
 #include "robotis_controller_msgs/SyncWriteItem.h"
+#include "robotis_controller_msgs/SyncWriteMulti.h"
 #include "robotis_controller_msgs/JointCtrlModule.h"
 #include "robotis_controller_msgs/GetJointModule.h"
 
@@ -56,6 +57,7 @@
 #include "robotis_framework_common/sensor_module.h"
 #include "dynamixel_sdk/group_bulk_read.h"
 #include "dynamixel_sdk/group_sync_write.h"
+#include "dynamixel_sdk/group_sync_read.h"
 
 namespace robotis_framework
 {
@@ -115,6 +117,9 @@ public:
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_i_gain_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_d_gain_;
 
+  /* sync read */
+  std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
+
   /* publisher */
   ros::Publisher  goal_joint_state_pub_;
   ros::Publisher  present_joint_state_pub_;
@@ -152,6 +157,8 @@ public:
   void    setJointCtrlModuleCallback(const robotis_controller_msgs::JointCtrlModule::ConstPtr &msg);
   void    setCtrlModuleCallback(const std_msgs::String::ConstPtr &msg);
   bool    getCtrlModuleCallback(robotis_controller_msgs::GetJointModule::Request &req, robotis_controller_msgs::GetJointModule::Response &res);
+
+  void    syncWriteMultiCallback(const robotis_controller_msgs::SyncWriteMulti::ConstPtr &msg);
 
   void    gazeboJointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg);
 

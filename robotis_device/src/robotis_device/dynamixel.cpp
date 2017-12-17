@@ -42,7 +42,7 @@ using namespace robotis_framework;
 Dynamixel::Dynamixel(int id, std::string model_name, float protocol_version)
   : ctrl_module_name_("none"),
     torque_to_current_value_ratio_(1.0),
-    velocity_to_value_ratio_(1.0),
+    velocity_to_value_ratio_(1.0/(0.229*2*3.14159265/60.0)),
     value_of_0_radian_position_(0),
     value_of_min_radian_position_(0),
     value_of_max_radian_position_(0),
