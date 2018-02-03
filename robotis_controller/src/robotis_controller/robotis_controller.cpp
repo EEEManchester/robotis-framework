@@ -532,8 +532,8 @@ void RobotisController::initializeDevice(const std::string init_file_path)
       port_to_bulk_read_[dxl->port_name_]->addParam(dxl->id_, bulkread_start_addr, bulkread_data_length);
 
     // Torque ON
-    // if (writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1) != COMM_SUCCESS)
-    //   writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1);
+    if (writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1) != COMM_SUCCESS)
+      writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1);
   }
 
   for (auto& it : robot_->sensors_)
