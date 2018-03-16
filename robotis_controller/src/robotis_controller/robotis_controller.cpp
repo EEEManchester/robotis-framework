@@ -637,7 +637,8 @@ void RobotisController::msgQueueThread()
 
   ros::Subscriber sync_write_multi_sub     = ros_node.subscribe("/robotis/sync_write_multi", 10,
                                                               &RobotisController::syncWriteMultiCallback, this);
-
+  ros::Subscriber sync_write_multi_float_sub     = ros_node.subscribe("/robotis/sync_write_multi_float", 10,
+                                                              &RobotisController::syncWriteMultiFloatCallback, this);
 
   ros::Subscriber gazebo_joint_states_sub;
   if (gazebo_mode_ == true)
@@ -666,6 +667,9 @@ void RobotisController::msgQueueThread()
   /* service */
   ros::ServiceServer joint_module_server = ros_node.advertiseService("/robotis/get_present_joint_ctrl_modules",
                                                         &RobotisController::getCtrlModuleCallback, this);
+
+  //ros::ServiceServer joint_torque_server = ros_node.advertiseService("/robotis/torque_enable",
+  //                                                      &RobotisController::setTorqueEnable, this);
 
   ros::WallDuration duration(robot_->getControlCycle() / 1000.0);
   while(ros_node.ok())
@@ -1116,15 +1120,14 @@ void RobotisController::process()
       }
     }
   }
+  // THIS CONTROL MODE IS USED FOR STANDARD HARDWARE CONTROL
   else if (controller_mode_ == DirectControlMode)
   {
-
     if(gazebo_mode_ == false)
     {
       // SyncRead Rx
       for (auto& it : port_to_sync_read_)
       {
-        ROS_INFO("DCM here");
         robot_->ports_[it.first]->setPacketTimeout(0.0);
         it.second->rxPacket();
       }
@@ -1570,6 +1573,7 @@ void RobotisController::syncWriteItemCallback(const robotis_controller_msgs::Syn
     if(item_it != device->ctrl_table_.end())
     {
       item = item_it->second;
+      // ROS_INFO("ITEM NAME %s", msg->item_name.c_str());
     }
     else
     {
@@ -1624,7 +1628,7 @@ void RobotisController::syncWriteItemCallback(const robotis_controller_msgs::Syn
     queue_mutex_.unlock();
   }
 }
-
+// wilson: added following function -
 void RobotisController::syncWriteMultiCallback(const robotis_controller_msgs::SyncWriteMulti::ConstPtr &msg)
 {
   for (int i = 0; i < msg->joint_name.size(); i++)
@@ -1669,7 +1673,7 @@ void RobotisController::syncWriteMultiCallback(const robotis_controller_msgs::Sy
 
     if (item->access_type_ == Read)
       continue;
-
+    
     queue_mutex_.lock();
 
     int idx = 0;
@@ -1704,6 +1708,126 @@ void RobotisController::syncWriteMultiCallback(const robotis_controller_msgs::Sy
       data[1] = DXL_HIBYTE(DXL_LOWORD((uint32_t)msg->value[i]));
       data[2] = DXL_LOBYTE(DXL_HIWORD((uint32_t)msg->value[i]));
       data[3] = DXL_HIBYTE(DXL_HIWORD((uint32_t)msg->value[i]));
+    }
+    else if (msg->data_length == 8)
+    {
+      data[0] = DXL_LOBYTE(DXL_LOWORD((uint32_t)msg->value[i*2]));
+      data[1] = DXL_HIBYTE(DXL_LOWORD((uint32_t)msg->value[i*2]));
+      data[2] = DXL_LOBYTE(DXL_HIWORD((uint32_t)msg->value[i*2]));
+      data[3] = DXL_HIBYTE(DXL_HIWORD((uint32_t)msg->value[i*2]));
+
+      data[4] = DXL_LOBYTE(DXL_LOWORD((uint32_t)msg->value[i*2+1]));
+      data[5] = DXL_HIBYTE(DXL_LOWORD((uint32_t)msg->value[i*2+1]));
+      data[6] = DXL_LOBYTE(DXL_HIWORD((uint32_t)msg->value[i*2+1]));
+      data[7] = DXL_HIBYTE(DXL_HIWORD((uint32_t)msg->value[i*2+1]));
+    }
+
+    direct_sync_write_[idx]->addParam(device->id_, data);
+    delete[] data;
+
+    queue_mutex_.unlock();
+  }
+}
+// wilson: added following function -
+void RobotisController::syncWriteMultiFloatCallback(const robotis_controller_msgs::SyncWriteMultiFloat::ConstPtr &msg)
+{
+  for (int i = 0; i < msg->joint_name.size(); i++)
+  {
+    Device           *device;
+    // Check joint name
+    auto d_it1 = robot_->dxls_.find(msg->joint_name[i]);
+    if (d_it1 != robot_->dxls_.end())
+    {
+      device = d_it1->second;
+    }
+    else
+    {
+      auto d_it2 = robot_->sensors_.find(msg->joint_name[i]);
+      if (d_it2 != robot_->sensors_.end())
+      {
+        device = d_it2->second;
+      }
+      else
+      {
+        ROS_WARN("[SyncWriteItem] Unknown device : %s", msg->joint_name[i].c_str());
+        continue;
+      }
+    }
+
+    // Check control item
+    ControlTableItem *item  = NULL;
+    auto item_it = device->ctrl_table_.find(msg->item_name);
+    if(item_it != device->ctrl_table_.end())
+    {
+      item = item_it->second;
+    }
+    else
+    {
+      ROS_WARN("SyncWriteItem] Unknown item : %s", msg->item_name.c_str());
+      continue;
+    }
+
+    dynamixel::PortHandler   *port           = robot_->ports_[device->port_name_];
+    dynamixel::PacketHandler *packet_handler = dynamixel::PacketHandler::getPacketHandler(device->protocol_version_);
+
+    if (item->access_type_ == Read)
+      continue;
+    
+    queue_mutex_.lock();
+
+    int idx = 0;
+    if (direct_sync_write_.size() == 0)
+    {
+      direct_sync_write_.push_back(new dynamixel::GroupSyncWrite(port, packet_handler, item->address_, msg->data_length));
+      idx = 0;
+    }
+    else
+    {
+      for (idx = 0; idx < direct_sync_write_.size(); idx++)
+      {
+        if (direct_sync_write_[idx]->getPortHandler() == port && direct_sync_write_[idx]->getPacketHandler() == packet_handler)
+          break;
+      }
+
+      if (idx == direct_sync_write_.size())
+        direct_sync_write_.push_back(new dynamixel::GroupSyncWrite(port, packet_handler, item->address_, msg->data_length));
+    }
+
+    uint8_t *data = new uint8_t[msg->data_length];  // define pointer size based on message data length
+    if (msg->data_length == 1)
+      data[0] = (uint8_t) msg->value[i];
+    else if (msg->data_length == 2)
+    {
+      data[0] = DXL_LOBYTE((uint16_t )msg->value[i]);
+      data[1] = DXL_HIBYTE((uint16_t )msg->value[i]);
+    }
+    else if (msg->data_length == 4)
+    {
+      float raw_value = 0;
+      // convert from float to raw value
+      if (msg->item_name=="goal_position"){
+        // ROS_INFO("position selected!");
+        float value_of_0_radian_position_   = 2048;
+        float value_of_min_radian_position_ = 0;
+        float value_of_max_radian_position_ = 4095;
+        float min_radian_                   = -3.14159265;
+        float max_radian_                   =  3.14159265;
+
+        if (msg->value[i] > 0)
+          raw_value = (msg->value[i] * (value_of_max_radian_position_ - value_of_0_radian_position_) / max_radian_) + value_of_0_radian_position_;
+        else if (msg->value[i] < 0)
+          raw_value = (msg->value[i] * (value_of_min_radian_position_ - value_of_0_radian_position_) / min_radian_) + value_of_0_radian_position_;
+        else
+          raw_value = 2048;
+      }
+      else
+        raw_value = (uint32_t)msg->value[i];
+
+      // ROS_INFO_STREAM("raw value : " << (uint32_t)raw_value);
+      data[0] = DXL_LOBYTE(DXL_LOWORD((uint32_t)raw_value));
+      data[1] = DXL_HIBYTE(DXL_LOWORD((uint32_t)raw_value));
+      data[2] = DXL_LOBYTE(DXL_HIWORD((uint32_t)raw_value));
+      data[3] = DXL_HIBYTE(DXL_HIWORD((uint32_t)raw_value));
     }
     else if (msg->data_length == 8)
     {
@@ -1776,6 +1900,94 @@ void RobotisController::setJointStatesCallback(const sensor_msgs::JointState::Co
 
   queue_mutex_.unlock();
 }
+// TODO: SERVICE TO DISABLE TORQUE
+// bool RobotisController::setTorqueEnable(robotis_controller_msgs::SetTorqueEnable::Request &req,
+//     robotis_controller_msgs::SetTorqueEnable::Response &res)
+// {
+//   bool service_state = false;
+//   unsigned int torque_enable = 0;
+
+//   if (req.enable == true){
+//     torque_enable = 1;
+//     ROS_INFO_STREAM("Enabling torque");
+//   }
+//   else if (req.enable == false){
+//     torque_enable = 0;
+//     ROS_INFO_STREAM("Disabling torque");
+//   }
+
+//   try
+//   {
+//     // cycle through all possible joints in robot class
+//     int i = 0;
+//     for (auto& it : robot_->dxls_)
+//     {
+//       Device           *device;
+
+//       std::string joint_name  = it.first;   // first item is joint name
+//       Dynamixel  *dxl         = it.second;  // second item is 
+
+//       ROS_INFO_STREAM(joint_name);          // display joint names
+
+//       std::string item_name = dxl->torque_enable_item_->item_name_;
+
+//       ControlTableItem *item  = NULL;
+//       auto item_it = device->ctrl_table_.find(item_name);
+//       if(item_it != device->ctrl_table_.end())
+//       {
+//         item = item_it->second;
+//       }
+//       else
+//       {
+//         ROS_WARN("SyncWriteItem] Unknown item : %s", item_name.c_str());
+//         continue;
+//       }
+
+//       dynamixel::PortHandler   *port           = robot_->ports_[device->port_name_];
+//       dynamixel::PacketHandler *packet_handler = dynamixel::PacketHandler::getPacketHandler(device->protocol_version_);
+      
+//       // queue_mutex_.lock();
+
+//       // int idx = 0;
+//       // if (direct_sync_write_.size() == 0)
+//       // {
+//       //   direct_sync_write_.push_back(new dynamixel::GroupSyncWrite(port, packet_handler, item->address_, item->data_length_));
+//       //   idx = 0;
+//       // }
+//       // else
+//       // {
+//       //   for (idx = 0; idx < direct_sync_write_.size(); idx++)
+//       //   {
+//       //     if (direct_sync_write_[idx]->getPortHandler() == port && direct_sync_write_[idx]->getPacketHandler() == packet_handler)
+//       //       break;
+//       //   }
+
+//       //   if (idx == direct_sync_write_.size())
+//       //     direct_sync_write_.push_back(new dynamixel::GroupSyncWrite(port, packet_handler, item->address_, item->data_length_));
+//       // }
+
+//       // uint8_t *data = new uint8_t[item->data_length_];
+//       // if (item->data_length_ == 1)
+//       //   data[0] = torque_enable;
+
+//       // direct_sync_write_[idx]->addParam(device->id_, data);
+//       // delete[] data;
+
+//       // queue_mutex_.unlock();
+//       i++;
+//     }
+
+//     service_state = true;
+//     res.status = true;
+//   } catch (const std::exception& e)
+//   {
+//     ROS_ERROR("Fail to disable torque");
+//     res.status = false;
+//     service_state = false;
+//   }
+  
+//   return service_state;
+// }
 
 void RobotisController::setCtrlModuleCallback(const std_msgs::String::ConstPtr &msg)
 {
@@ -2444,16 +2656,17 @@ int RobotisController::write(const std::string joint_name, uint16_t address, uin
 
 int RobotisController::writeCtrlItem(const std::string joint_name, const std::string item_name, uint32_t data, uint8_t *error)
 {
-  if (isTimerStopped() == false)
+  if (isTimerStopped() == false){
     return COMM_PORT_BUSY;
-
+  }
   Dynamixel *dxl = robot_->dxls_[joint_name];
-  if (dxl == NULL)
+  if (dxl == NULL){
     return COMM_NOT_AVAILABLE;
-
+  }
   ControlTableItem *item = dxl->ctrl_table_[item_name];
-  if (item == NULL)
+  if (item == NULL){
     return COMM_NOT_AVAILABLE;
+  }
 
   dynamixel::PacketHandler *pkt_handler   = dynamixel::PacketHandler::getPacketHandler(dxl->protocol_version_);
   dynamixel::PortHandler   *port_handler  = robot_->ports_[dxl->port_name_];

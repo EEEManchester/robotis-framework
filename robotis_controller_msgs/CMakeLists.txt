@@ -20,6 +20,7 @@ add_message_files(
   FILES
   SyncWriteItem.msg
   SyncWriteMulti.msg
+  SyncWriteMultiFloat.msg
   JointCtrlModule.msg
   StatusMsg.msg
   WriteControlTable.msg
@@ -28,6 +29,7 @@ add_message_files(
 add_service_files(
   FILES
   GetJointModule.srv
+  SetTorqueEnable.srv
 )
 
 generate_messages(

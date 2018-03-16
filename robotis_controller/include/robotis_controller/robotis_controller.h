@@ -48,9 +48,11 @@
 
 #include "robotis_controller_msgs/WriteControlTable.h"
 #include "robotis_controller_msgs/SyncWriteItem.h"
-#include "robotis_controller_msgs/SyncWriteMulti.h"
+#include "robotis_controller_msgs/SyncWriteMulti.h"       // wilson added
+#include "robotis_controller_msgs/SyncWriteMultiFloat.h"  // wilson added
 #include "robotis_controller_msgs/JointCtrlModule.h"
 #include "robotis_controller_msgs/GetJointModule.h"
+#include "robotis_controller_msgs/SetTorqueEnable.h"
 
 #include "robotis_device/robot.h"
 #include "robotis_framework_common/motion_module.h"
@@ -157,8 +159,10 @@ public:
   void    setJointCtrlModuleCallback(const robotis_controller_msgs::JointCtrlModule::ConstPtr &msg);
   void    setCtrlModuleCallback(const std_msgs::String::ConstPtr &msg);
   bool    getCtrlModuleCallback(robotis_controller_msgs::GetJointModule::Request &req, robotis_controller_msgs::GetJointModule::Response &res);
+  // bool    setTorqueEnable(robotis_controller_msgs::SetTorqueEnable::Request &req, robotis_controller_msgs::SetTorqueEnable::Response &res);  // wilson added
 
-  void    syncWriteMultiCallback(const robotis_controller_msgs::SyncWriteMulti::ConstPtr &msg);
+  void    syncWriteMultiCallback(const robotis_controller_msgs::SyncWriteMulti::ConstPtr &msg);           // wilson added
+  void    syncWriteMultiFloatCallback(const robotis_controller_msgs::SyncWriteMultiFloat::ConstPtr &msg); // wilson added
 
   void    gazeboJointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg);
 
