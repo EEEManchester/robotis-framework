@@ -5,7 +5,7 @@ wheel1: # XM-430-W350
   homing_offset: 0
   max_position_limit: 4000 #  57.3 deg
   min_position_limit: 1 # -57.3 deg
-  velocity_limit: 150
+  velocity_limit: 1023
   goal_position: 2048 # 0-4095
   goal_current: 1941 # 0-1941
   goal_velocity: 10 # 0-1023
@@ -23,7 +23,7 @@ wheel2: # XM-430-W350
   homing_offset: 0
   max_position_limit: 4000
   min_position_limit: 1
-  velocity_limit: 1000 #!!
+  velocity_limit: 1023 #!!
   goal_position: 2048 # 0-4095
   goal_current: 1941 # 0-1941
   goal_velocity: 0 # 0-1023 !!
@@ -41,7 +41,7 @@ wheel3: # XM-430-W350
   homing_offset: 0
   max_position_limit: 4000
   min_position_limit: 1
-  velocity_limit: 1000 #!!
+  velocity_limit: 1023 #!!
   goal_position: 2048 # 0-4095
   goal_current: 1941 # 0-1941
   goal_velocity: 0 # 0-1023 !!
@@ -59,7 +59,7 @@ wheel4: # XM-430-W350
    homing_offset: 0
    max_position_limit: 4000 #  57.3 deg
    min_position_limit: 1 # -57.3 deg
-   velocity_limit: 150
+   velocity_limit: 1023	
    goal_position: 2048 # 0-4095
    goal_current: 1941 # 0-1941
    goal_velocity: 0 # 0-1023
@@ -78,7 +78,7 @@ joint5: # XM-430-W350
 #  max_position_limit: 4000 #  57.3 deg
 #  min_position_limit: 1 # -57.3 deg
   velocity_limit: 150
-  goal_position: 2048 # 0-4095
+#  goal_position: 2048 # 0-4095
   goal_current: 1941 # 0-1941
   goal_velocity: 0 # 0-1023
   position_p_gain: 850 # 0-16383
@@ -88,15 +88,49 @@ joint5: # XM-430-W350
   velocity_i_gain: 0
   profile_velocity: 40
   profile_acceleration: 0
-joint5: # XM-430-W350
+joint6: # XM-430-W350
   return_delay_time: 0 # item name : value
   operating_mode: 4 #  current: 0 ; velocity: 1; position: 3; extended_position: 4; current base position: 4; pwm: 20
+  shutdown: 20
+  homing_offset: 0
+  velocity_limit: 150
+#  goal_position: 2048 # 0-4095
+  goal_current: 1941 # 0-1941
+  goal_velocity: 0 # 0-1023
+  position_p_gain: 850 # 0-16383
+  position_i_gain: 0 # 0-16383
+  position_d_gain: 0 # 0-16383
+  velocity_p_gain: 851
+  velocity_i_gain: 0
+  profile_velocity: 40
+  profile_acceleration: 0
+joint7: # XM-430-W350
+  return_delay_time: 0 # item name : value
+  operating_mode: 3 #  current: 0 ; velocity: 1; position: 3; extended_position: 4; current base position: 4; pwm: 20
   shutdown: 20
   homing_offset: 0
 #  max_position_limit: 4000 #  57.3 deg
 #  min_position_limit: 1 # -57.3 deg
   velocity_limit: 150
-  goal_position: 2048 # 0-4095
+#  goal_position: 2048 # 0-4095
+  goal_current: 1941 # 0-1941
+  goal_velocity: 0 # 0-1023
+  position_p_gain: 850 # 0-16383
+  position_i_gain: 0 # 0-16383
+  position_d_gain: 0 # 0-16383
+  velocity_p_gain: 851
+  velocity_i_gain: 0
+  profile_velocity: 40
+  profile_acceleration: 0
+joint8: # XM-430-W350
+  return_delay_time: 0 # item name : value
+  operating_mode: 3 #  current: 0 ; velocity: 1; position: 3; extended_position: 4; current base position: 4; pwm: 20
+  shutdown: 20
+  homing_offset: 0
+#  max_position_limit: 4000 #  57.3 deg
+#  min_position_limit: 1 # -57.3 deg
+  velocity_limit: 150
+#  goal_position: 2048 # 0-4095
   goal_current: 1941 # 0-1941
   goal_velocity: 0 # 0-1023
   position_p_gain: 850 # 0-16383

@@ -1820,8 +1820,12 @@ void RobotisController::syncWriteMultiFloatCallback(const robotis_controller_msg
         else
           raw_value = 2048;
       }
-      else
-        raw_value = (uint32_t)msg->value[i];
+      else{
+      float velocity_to_value_ratio_= 1.0/(0.229*2*3.14159265/60.0);
+      //raw_value = (uint32_t)msg->value[i];
+      raw_value = msg->value[i]*velocity_to_value_ratio_;
+      // std::cout<<raw_value<<std::endl; 
+      }
 
       // ROS_INFO_STREAM("raw value : " << (uint32_t)raw_value);
       data[0] = DXL_LOBYTE(DXL_LOWORD((uint32_t)raw_value));
