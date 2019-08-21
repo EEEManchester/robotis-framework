@@ -8,13 +8,13 @@ wheel1: # XM-430-W350
   velocity_limit: 1023
   goal_position: 2048 # 0-4095
   goal_current: 1941 # 0-1941
-  goal_velocity: 10 # 0-1023
+  goal_velocity: 0 # 0-1023
   position_p_gain: 850 # 0-16383
   position_i_gain: 0 # 0-16383
   position_d_gain: 0 # 0-16383
-  velocity_p_gain: 851
-  velocity_i_gain: 0
-  profile_velocity: 40
+  velocity_p_gain: 100
+  velocity_i_gain: 1920
+  profile_velocity: 100 #!!
   profile_acceleration: 0
 wheel2: # XM-430-W350
   return_delay_time: 0 # item name : value
@@ -30,8 +30,8 @@ wheel2: # XM-430-W350
   position_p_gain: 850 # 0-16383
   position_i_gain: 0 # 0-16383
   position_d_gain: 0 # 0-16383
-  velocity_p_gain: 501
-  velocity_i_gain: 0
+  velocity_p_gain: 100
+  velocity_i_gain: 1920
   profile_velocity: 100 #!!
   profile_acceleration: 0
 wheel3: # XM-430-W350
@@ -48,8 +48,8 @@ wheel3: # XM-430-W350
   position_p_gain: 850 # 0-16383
   position_i_gain: 0 # 0-16383
   position_d_gain: 0 # 0-16383
-  velocity_p_gain: 501
-  velocity_i_gain: 0
+  velocity_p_gain: 100
+  velocity_i_gain: 1920
   profile_velocity: 100 #!!
   profile_acceleration: 0
 wheel4: # XM-430-W350
@@ -66,8 +66,8 @@ wheel4: # XM-430-W350
    position_p_gain: 851 # 0-16383
    position_i_gain: 0 # 0-16383
    position_d_gain: 0 # 0-16383
-   velocity_p_gain: 500
-   velocity_i_gain: 0
+   velocity_p_gain: 100
+   velocity_i_gain: 1920
    profile_velocity: 40
    profile_acceleration: 0
 joint5: # XM-430-W350
@@ -84,8 +84,8 @@ joint5: # XM-430-W350
   position_p_gain: 850 # 0-16383
   position_i_gain: 0 # 0-16383
   position_d_gain: 0 # 0-16383
-  velocity_p_gain: 851
-  velocity_i_gain: 0
+   velocity_p_gain: 100
+   velocity_i_gain: 1920
   profile_velocity: 40
   profile_acceleration: 0
 joint6: # XM-430-W350
@@ -100,8 +100,8 @@ joint6: # XM-430-W350
   position_p_gain: 850 # 0-16383
   position_i_gain: 0 # 0-16383
   position_d_gain: 0 # 0-16383
-  velocity_p_gain: 851
-  velocity_i_gain: 0
+   velocity_p_gain: 100
+   velocity_i_gain: 1920
   profile_velocity: 40
   profile_acceleration: 0
 joint7: # XM-430-W350
@@ -118,8 +118,8 @@ joint7: # XM-430-W350
   position_p_gain: 850 # 0-16383
   position_i_gain: 0 # 0-16383
   position_d_gain: 0 # 0-16383
-  velocity_p_gain: 851
-  velocity_i_gain: 0
+   velocity_p_gain: 100
+   velocity_i_gain: 1920
   profile_velocity: 40
   profile_acceleration: 0
 joint8: # XM-430-W350
@@ -136,7 +136,7 @@ joint8: # XM-430-W350
   position_p_gain: 850 # 0-16383
   position_i_gain: 0 # 0-16383
   position_d_gain: 0 # 0-16383
-  velocity_p_gain: 851
-  velocity_i_gain: 0
+   velocity_p_gain: 100
+   velocity_i_gain: 1920
   profile_velocity: 40
   profile_acceleration: 0
