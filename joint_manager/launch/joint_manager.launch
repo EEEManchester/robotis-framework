@@ -6,7 +6,7 @@
     <param name="gazebo_robot_name" value=""/>
 
     <param name="offset_file_path"  value="$(find joint_manager)/config/offset.yaml"/>
-    <param name="robot_file_path"   value="$(find joint_manager)/config/test.robot"/>
+    <param name="robot_file_path"   value="$(find joint_manager)/config/robot.robot"/>
     <param name="init_file_path"    value="$(find joint_manager)/config/dxl_init.yaml"/>
 
     <!-- Joint Manager -->
