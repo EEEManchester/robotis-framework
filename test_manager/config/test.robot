@@ -13,9 +13,9 @@ control_cycle = 16   # milliseconds
 #/dev/dynamixel | 1000000  | joint_8 
 
 [ device info ]
-# TYPE    | PORT NAME    | ID  | MODEL    | PROTOCOL | DEV NAME         | BULK READ ITEMS
-dynamixel | /dev/ttyUSB0 | 1  | XM-430-W350  | 2.0      | wheel1      	| present_position, present_velocity, present_current, goal_velocity, goal_position
-dynamixel | /dev/ttyUSB0 | 2  | XM-430-W350  | 2.0      | wheel2      	| present_position, present_velocity, present_current, goal_velocity, goal_position
+# TYPE    | PORT NAME    | ID  | MODEL    | PROTOCOL | DEV NAME         | BULK READ ITEMS                                                                       | INDIRECT SYNC WRITE
+dynamixel | /dev/ttyUSB0 | 1  | XM-430-W350  | 2.0      | wheel1      	| present_position, present_velocity, present_current, goal_velocity, goal_position     | goal_velocity
+dynamixel | /dev/ttyUSB0 | 2  | XM-430-W350  | 2.0      | wheel2      	| present_position, present_velocity, present_current, goal_velocity, goal_position     | goal_position
 #dynamixel | /dev/dynamixel | 3  | XM-430-W350  | 2.0      | wheel3      	| present_position, present_velocity, present_current, goal_velocity, goal_position
 #dynamixel | /dev/dynamixel | 4  | XM-430-W350  | 2.0      | wheel4      	| present_position, present_velocity, present_current, goal_velocity, goal_position
 #dynamixel | /dev/dynamixel | 5  | XM-430-W350  | 2.0      | joint5      	| present_position, present_velocity, present_current, goal_velocity, goal_position

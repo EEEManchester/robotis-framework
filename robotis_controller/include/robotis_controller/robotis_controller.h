@@ -78,6 +78,7 @@ private:
   boost::thread   set_module_thread_;
   boost::mutex    queue_mutex_;
 
+  bool            using_sync_read_;
   bool            init_pose_loaded_;
   bool            is_timer_running_;
   bool            stop_timer_;
@@ -109,6 +110,7 @@ public:
   std::map<std::string, dynamixel::GroupBulkRead *>   port_to_bulk_read_;
 
   /* sync write */
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_indirect_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_current_;
@@ -121,7 +123,6 @@ public:
 
   /* sync read */
   std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
-  // std::map<std::string, dynamixel::GroupSyncRead *>   port_to_test_sync_read_;
 
   /* publisher */
   ros::Publisher  goal_joint_state_pub_;

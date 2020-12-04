@@ -57,6 +57,8 @@
 
 #define DEFAULT_CONTROL_CYCLE 8 // milliseconds
 
+#define INDIRECT_ADDRESS_29 578
+
 namespace robotis_framework
 {
 

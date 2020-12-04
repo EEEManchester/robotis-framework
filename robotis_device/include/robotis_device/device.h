@@ -58,6 +58,7 @@ public:
 
   std::map<std::string, ControlTableItem *> ctrl_table_;
   std::vector<ControlTableItem *>           bulk_read_items_;
+  std::vector<ControlTableItem *>           sync_write_items_;
 
   virtual ~Device() { }
 };

@@ -131,7 +131,7 @@ Robot::Robot(std::string robot_file_path, std::string dev_desc_dir_path)
       else if (session == SESSION_DEVICE_INFO)
       {
         std::vector<std::string> tokens = split(input_str, '|');
-        if (tokens.size() != 7)
+        if (tokens.size() != 8)
           continue;
 
         if (tokens[0] == DYNAMIXEL)
@@ -148,6 +148,8 @@ Robot::Robot(std::string robot_file_path, std::string dev_desc_dir_path)
           std::vector<std::string> sub_tokens = split(tokens[6], ',');
           if (sub_tokens.size() > 0)
           {
+            // std::cout << INDIRECT_ADDRESS_1 << "\t" << GOAL_POSITION << std::endl;
+            // auto test_it = dxl->ctrl_table_.find(578);
             std::map<std::string, ControlTableItem *>::iterator indirect_it = dxl->ctrl_table_.find(INDIRECT_ADDRESS_1);
             if (indirect_it != dxl->ctrl_table_.end())    // INDIRECT_ADDRESS_1 exist
             {
@@ -177,6 +179,34 @@ Robot::Robot(std::string robot_file_path, std::string dev_desc_dir_path)
                 if (dxl->ctrl_table_[sub_tokens[i]] != NULL)
                   dxl->bulk_read_items_.push_back(dxl->ctrl_table_[sub_tokens[i]]);
               }
+            }
+          }
+          // Indirect Sync Write
+          std::map<std::string, ControlTableItem *>::iterator indirect_it = dxl->ctrl_table_.find(INDIRECT_ADDRESS_1);
+          if (indirect_it != dxl->ctrl_table_.end())    // INDIRECT_ADDRESS_1 exist
+          {
+            std::cout << "Indirect Sync Write: " << tokens[7] << std::endl;
+
+            uint16_t indirect_data_addr = 634;
+            // uint16_t indirect_data_addr = dxl->ctrl_table_[INDIRECT_DATA_29]->address_ + ;
+            
+            std::vector<std::string> sub_tokens = split(tokens[7], ',');
+            for (int _i = 0; _i < sub_tokens.size(); _i++)
+            {
+              dxl->sync_write_items_.push_back(new ControlTableItem());
+              ControlTableItem *dest_item = dxl->sync_write_items_[_i];
+              ControlTableItem *src_item  = dxl->ctrl_table_[sub_tokens[_i]];
+              
+              dest_item->item_name_       = src_item->item_name_;
+              dest_item->address_         = indirect_data_addr;
+              dest_item->access_type_     = src_item->access_type_;
+              dest_item->memory_type_     = src_item->memory_type_;
+              dest_item->data_length_     = src_item->data_length_;
+              dest_item->data_min_value_  = src_item->data_min_value_;
+              dest_item->data_max_value_  = src_item->data_max_value_;
+              dest_item->is_signed_       = src_item->is_signed_;
+
+              indirect_data_addr += dest_item->data_length_;
             }
           }
         }

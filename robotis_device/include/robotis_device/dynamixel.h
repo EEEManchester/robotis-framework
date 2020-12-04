@@ -79,6 +79,8 @@ public:
   ControlTableItem *velocity_i_gain_item_;
   ControlTableItem *velocity_d_gain_item_;
 
+  ControlTableItem *indirect_sync_write_item_;
+
   Dynamixel(int id, std::string model_name, float protocol_version);
 
   double  convertValue2Radian(int32_t value);

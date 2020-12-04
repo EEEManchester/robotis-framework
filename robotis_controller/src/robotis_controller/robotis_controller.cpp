@@ -45,6 +45,7 @@ using namespace robotis_framework;
 RobotisController::RobotisController()
   : is_timer_running_(false),
     stop_timer_(false),
+    using_sync_read_(false),
     init_pose_loaded_(false),
     timer_thread_(0),
     controller_mode_(DirectControlMode),
@@ -331,7 +332,7 @@ bool RobotisController::initialize(const std::string robot_file_path, const std:
     }
 
     port_to_bulk_read_[port_name] = new dynamixel::GroupBulkRead(port, default_pkt_handler);
-    port_to_sync_read_[port_name] = new dynamixel::GroupSyncRead(port, default_pkt_handler, 224, 18);
+    // port_to_sync_read_[port_name] = new dynamixel::GroupSyncRead(port, default_pkt_handler, 224, 18);
   }
 
   // (for loop) check all dxls are connected.
@@ -463,6 +464,11 @@ void RobotisController::initializeDevice(const std::string init_file_path)
     if (port_to_bulk_read_[it.first] != 0)
       port_to_bulk_read_[it.first]->clearParam();
   }
+
+  std::vector<int> size_read;
+  int syncread_indirect_addr = 0;
+  int syncread_indirect_length = 0;
+
   for (auto& it : robot_->dxls_)
   {
     std::string joint_name  = it.first;
@@ -476,6 +482,7 @@ void RobotisController::initializeDevice(const std::string init_file_path)
 
     // calculate bulk read start address & data length
     auto indirect_addr_it = dxl->ctrl_table_.find(INDIRECT_ADDRESS_1);
+    auto indirect_data_it = dxl->ctrl_table_.find(INDIRECT_DATA_1);
     if (indirect_addr_it != dxl->ctrl_table_.end()) // INDIRECT_ADDRESS_1 exist
     {
       if (dxl->bulk_read_items_.size() != 0)
@@ -497,6 +504,9 @@ void RobotisController::initializeDevice(const std::string init_file_path)
             indirect_addr += 2;
           }
         }
+        size_read.push_back(dxl->bulk_read_items_.size());
+        syncread_indirect_addr = indirect_data_it->second->address_;
+        syncread_indirect_length = bulkread_data_length;
       }
     }
     else    // INDIRECT_ADDRESS_1 NOT exist
@@ -521,17 +531,46 @@ void RobotisController::initializeDevice(const std::string init_file_path)
       }
     }
 
-//    ROS_WARN("[%12s] start_addr: %d, data_length: %d", joint_name.c_str(), bulkread_start_addr, bulkread_data_length);
+    // ROS_WARN("[%12s] start_addr: %d, data_length: %d", joint_name.c_str(), bulkread_start_addr, bulkread_data_length);
     if (bulkread_start_addr != 0)
       port_to_bulk_read_[dxl->port_name_]->addParam(dxl->id_, bulkread_start_addr, bulkread_data_length);
-
-    port_to_sync_read_[dxl->port_name_]->addParam(dxl->id_);
 
     // Torque ON
     if (writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1) != COMM_SUCCESS)
       writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1);
   }
 
+  // Set up indirect sync read if all have same length
+  if ( std::equal(size_read.begin() + 1, size_read.end(), size_read.begin()) && size_read.at(0) > 0)
+  {
+    ROS_INFO("Reading joint states using Sync Write, address:%d , length:%d", syncread_indirect_addr, syncread_indirect_length);
+    using_sync_read_ = true;
+    // Cycle through each ports to clear parameters
+    for (auto& it : robot_->ports_)
+    {
+      std::string               port_name           = it.first;
+      dynamixel::PortHandler   *port                = it.second;
+      dynamixel::PacketHandler *default_pkt_handler = dynamixel::PacketHandler::getPacketHandler(2.0);
+    
+      port_to_sync_read_[port_name] = new dynamixel::GroupSyncRead(
+          port, default_pkt_handler, syncread_indirect_addr, syncread_indirect_length);
+    }
+    // Cycle through each ports to clear parameters
+    for (auto& it : robot_->ports_)
+    {
+      if (port_to_sync_read_[it.first] != 0)
+        port_to_sync_read_[it.first]->clearParam();
+    }
+    // Cycle through each motor to add Param to sync read
+    for (auto& it : robot_->dxls_)
+    {
+      Dynamixel  *dxl         = it.second;
+      port_to_sync_read_[dxl->port_name_]->addParam(dxl->id_);
+    }
+  }
+  else
+    ROS_INFO("Reading joint states using Bulk Read");
+  
   for (auto& it : robot_->sensors_)
   {
     std::string sensor_name = it.first;
@@ -1122,20 +1161,25 @@ void RobotisController::process()
     if(gazebo_mode_ == false)
     {
       // SyncRead Rx
-      for (auto& it : port_to_sync_read_)
+      if (using_sync_read_)
       {
-        robot_->ports_[it.first]->setPacketTimeout(0.0);
-        result = it.second->rxPacket();
-        if (result != COMM_SUCCESS) printf("Sync read failed\n");
+        for (auto& it : port_to_sync_read_)
+        {
+          robot_->ports_[it.first]->setPacketTimeout(0.0);
+          result = it.second->rxPacket();
+          if (result != COMM_SUCCESS) printf("Sync read failed\n");
+        }
       }
-
       // BulkRead Rx
-      // for (auto& it : port_to_bulk_read_)
-      // {
-      //   robot_->ports_[it.first]->setPacketTimeout(0.0);
-      //   result = it.second->rxPacket();
-      //   if (result != COMM_SUCCESS) printf("Bulk read failed\n");
-      // }
+      else
+      {
+        for (auto& it : port_to_bulk_read_)
+        {
+          robot_->ports_[it.first]->setPacketTimeout(0.0);
+          result = it.second->rxPacket();
+          if (result != COMM_SUCCESS) printf("Bulk read failed\n");
+        }
+      }
 
       // -> save to robot->dxls_[]->dxl_state_
       if (robot_->dxls_.size() > 0)
@@ -1152,32 +1196,41 @@ void RobotisController::process()
             for (int i = 0; i < dxl->bulk_read_items_.size(); i++)
             {
               ControlTableItem *item = dxl->bulk_read_items_[i];
-              // if (port_to_bulk_read_[port_name]->isAvailable(dxl->id_, item->address_, item->data_length_) == true)
-              // {
-              //   data = port_to_bulk_read_[port_name]->getData(dxl->id_, item->address_, item->data_length_);
-              if (port_to_sync_read_[port_name]->isAvailable(dxl->id_, item->address_, item->data_length_) == true)
+              
+              if (using_sync_read_)
               {
-                data = port_to_sync_read_[port_name]->getData(dxl->id_, item->address_, item->data_length_);
-
-                // change dxl_state
-                if (dxl->present_position_item_ != 0 && item->item_name_ == dxl->present_position_item_->item_name_)
-                  dxl->dxl_state_->present_position_ = dxl->convertValue2Radian(data) - dxl->dxl_state_->position_offset_; // remove offset
-                else if (dxl->present_velocity_item_ != 0 && item->item_name_ == dxl->present_velocity_item_->item_name_)
-                  dxl->dxl_state_->present_velocity_ = dxl->convertValue2Velocity(data);
-                else if (dxl->present_current_item_ != 0 && item->item_name_ == dxl->present_current_item_->item_name_)
-                  dxl->dxl_state_->present_torque_ = dxl->convertValue2Torque(data);
-                else if (dxl->goal_position_item_ != 0 && item->item_name_ == dxl->goal_position_item_->item_name_)
-                  dxl->dxl_state_->goal_position_ = dxl->convertValue2Radian(data) - dxl->dxl_state_->position_offset_; // remove offset
-                else if (dxl->goal_velocity_item_ != 0 && item->item_name_ == dxl->goal_velocity_item_->item_name_)
-                  dxl->dxl_state_->goal_velocity_ = dxl->convertValue2Velocity(data);
-                else if (dxl->goal_current_item_ != 0 && item->item_name_ == dxl->goal_current_item_->item_name_)
-                  dxl->dxl_state_->goal_torque_ = dxl->convertValue2Torque(data);
+                if (port_to_sync_read_[port_name]->isAvailable(dxl->id_, item->address_, item->data_length_) == true)
+                  data = port_to_sync_read_[port_name]->getData(dxl->id_, item->address_, item->data_length_);
                 else
-                  dxl->dxl_state_->bulk_read_table_[item->item_name_] = data;
-                std::cout << "Item available" << item->address_ << "\t" << data << std::endl;
+                  continue;
               }
               else
-                std::cout << "Item unavailable" << item->address_ << std::endl;
+              {
+                if (port_to_bulk_read_[port_name]->isAvailable(dxl->id_, item->address_, item->data_length_) == true)
+                  data = port_to_bulk_read_[port_name]->getData(dxl->id_, item->address_, item->data_length_);
+                else
+                  continue;
+              }
+              
+              // change dxl_state
+              if (dxl->present_position_item_ != 0 && item->item_name_ == dxl->present_position_item_->item_name_)
+                dxl->dxl_state_->present_position_ = dxl->convertValue2Radian(data) - dxl->dxl_state_->position_offset_; // remove offset
+              else if (dxl->present_velocity_item_ != 0 && item->item_name_ == dxl->present_velocity_item_->item_name_)
+                dxl->dxl_state_->present_velocity_ = dxl->convertValue2Velocity(data);
+              else if (dxl->present_current_item_ != 0 && item->item_name_ == dxl->present_current_item_->item_name_)
+                dxl->dxl_state_->present_torque_ = dxl->convertValue2Torque(data);
+              else if (dxl->goal_position_item_ != 0 && item->item_name_ == dxl->goal_position_item_->item_name_)
+                dxl->dxl_state_->goal_position_ = dxl->convertValue2Radian(data) - dxl->dxl_state_->position_offset_; // remove offset
+              else if (dxl->goal_velocity_item_ != 0 && item->item_name_ == dxl->goal_velocity_item_->item_name_)
+                dxl->dxl_state_->goal_velocity_ = dxl->convertValue2Velocity(data);
+              else if (dxl->goal_current_item_ != 0 && item->item_name_ == dxl->goal_current_item_->item_name_)
+                dxl->dxl_state_->goal_torque_ = dxl->convertValue2Torque(data);
+              else
+                dxl->dxl_state_->bulk_read_table_[item->item_name_] = data;
+                // std::cout << "Item available" << item->address_ << "\t" << data << std::endl;
+              // }
+              // else
+                // std::cout << "Item unavailable" << item->address_ << std::endl;
             }
 
             // -> update time stamp to Robot->dxls[]->dynamixel_state.update_time_stamp
