@@ -187,7 +187,7 @@ Robot::Robot(std::string robot_file_path, std::string dev_desc_dir_path)
           {
             std::cout << "Indirect Sync Write: " << tokens[7] << std::endl;
 
-            uint16_t indirect_data_addr = 634;
+            uint16_t indirect_data_addr = 578;
             // uint16_t indirect_data_addr = dxl->ctrl_table_[INDIRECT_DATA_29]->address_ + ;
             
             std::vector<std::string> sub_tokens = split(tokens[7], ',');

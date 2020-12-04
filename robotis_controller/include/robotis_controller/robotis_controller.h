@@ -63,6 +63,8 @@
 
 namespace robotis_framework
 {
+#define ADDR_INDIRECTADDRESS_FOR_WRITE       578
+#define ADDR_INDIRECTDATA_FOR_WRITE          634
 
 enum ControllerMode
 {
@@ -79,6 +81,7 @@ private:
   boost::mutex    queue_mutex_;
 
   bool            using_sync_read_;
+  bool            using_indirect_sync_write_;
   bool            init_pose_loaded_;
   bool            is_timer_running_;
   bool            stop_timer_;
@@ -110,16 +113,17 @@ public:
   std::map<std::string, dynamixel::GroupBulkRead *>   port_to_bulk_read_;
 
   /* sync write */
-  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_indirect_;
+  // dynamixel::GroupSyncWrite *group_sync_write_indirect_;
+  std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_indirect_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_current_;
-  std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_p_gain_;
-  std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_i_gain_;
-  std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_d_gain_;
-  std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_p_gain_;
-  std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_i_gain_;
-  std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_d_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_p_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_i_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_d_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_p_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_i_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_d_gain_;
 
   /* sync read */
   std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
@@ -165,6 +169,7 @@ public:
 
   void    syncWriteMultiCallback(const robotis_controller_msgs::SyncWriteMulti::ConstPtr &msg);           // wilson added
   void    syncWriteMultiFloatCallback(const robotis_controller_msgs::SyncWriteMultiFloat::ConstPtr &msg); // wilson added
+  void    indirectSyncWriteMultiFloatCallback(const robotis_controller_msgs::SyncWriteMultiFloat::ConstPtr &msg); // wilson added
 
   void    gazeboJointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg);
 

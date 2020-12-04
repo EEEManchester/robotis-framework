@@ -18,7 +18,7 @@ wheel1: # XM-430-W350
   profile_acceleration: 0
 wheel2: # XM-430-W350
   return_delay_time: 0 # item name : value
-  operating_mode: 1 #  current: 0 ; velocity: 1; position: 3; extended_position: 4; current base position: 4; pwm: 20
+  operating_mode: 3 #  current: 0 ; velocity: 1; position: 3; extended_position: 4; current base position: 4; pwm: 20
   shutdown: 20
   homing_offset: 0
   max_position_limit: 4000
