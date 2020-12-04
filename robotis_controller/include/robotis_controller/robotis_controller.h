@@ -121,6 +121,7 @@ public:
 
   /* sync read */
   std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
+  // std::map<std::string, dynamixel::GroupSyncRead *>   port_to_test_sync_read_;
 
   /* publisher */
   ros::Publisher  goal_joint_state_pub_;

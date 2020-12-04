@@ -331,6 +331,7 @@ bool RobotisController::initialize(const std::string robot_file_path, const std:
     }
 
     port_to_bulk_read_[port_name] = new dynamixel::GroupBulkRead(port, default_pkt_handler);
+    port_to_sync_read_[port_name] = new dynamixel::GroupSyncRead(port, default_pkt_handler, 224, 18);
   }
 
   // (for loop) check all dxls are connected.
@@ -473,13 +474,6 @@ void RobotisController::initializeDevice(const std::string init_file_path)
     int bulkread_start_addr = 0;
     int bulkread_data_length = 0;
 
-//    // bulk read default : present position
-//    if(dxl->present_position_item != 0)
-//    {
-//        bulkread_start_addr    = dxl->present_position_item->address;
-//        bulkread_data_length   = dxl->present_position_item->data_length;
-//    }
-
     // calculate bulk read start address & data length
     auto indirect_addr_it = dxl->ctrl_table_.find(INDIRECT_ADDRESS_1);
     if (indirect_addr_it != dxl->ctrl_table_.end()) // INDIRECT_ADDRESS_1 exist
@@ -530,6 +524,8 @@ void RobotisController::initializeDevice(const std::string init_file_path)
 //    ROS_WARN("[%12s] start_addr: %d, data_length: %d", joint_name.c_str(), bulkread_start_addr, bulkread_data_length);
     if (bulkread_start_addr != 0)
       port_to_bulk_read_[dxl->port_name_]->addParam(dxl->id_, bulkread_start_addr, bulkread_data_length);
+
+    port_to_sync_read_[dxl->port_name_]->addParam(dxl->id_);
 
     // Torque ON
     if (writeCtrlItem(joint_name, dxl->torque_enable_item_->item_name_, 1) != COMM_SUCCESS)
@@ -897,7 +893,7 @@ void RobotisController::process()
 
   present_state.header.stamp = ros::Time::now();
   goal_state.header.stamp = present_state.header.stamp;
-
+  int result;
   if (controller_mode_ == MotionModuleMode)
   {
     if (gazebo_mode_ == false)
@@ -1129,15 +1125,17 @@ void RobotisController::process()
       for (auto& it : port_to_sync_read_)
       {
         robot_->ports_[it.first]->setPacketTimeout(0.0);
-        it.second->rxPacket();
+        result = it.second->rxPacket();
+        if (result != COMM_SUCCESS) printf("Sync read failed\n");
       }
 
       // BulkRead Rx
-      for (auto& it : port_to_bulk_read_)
-      {
-        robot_->ports_[it.first]->setPacketTimeout(0.0);
-        it.second->rxPacket();
-      }
+      // for (auto& it : port_to_bulk_read_)
+      // {
+      //   robot_->ports_[it.first]->setPacketTimeout(0.0);
+      //   result = it.second->rxPacket();
+      //   if (result != COMM_SUCCESS) printf("Bulk read failed\n");
+      // }
 
       // -> save to robot->dxls_[]->dxl_state_
       if (robot_->dxls_.size() > 0)
@@ -1154,9 +1152,12 @@ void RobotisController::process()
             for (int i = 0; i < dxl->bulk_read_items_.size(); i++)
             {
               ControlTableItem *item = dxl->bulk_read_items_[i];
-              if (port_to_bulk_read_[port_name]->isAvailable(dxl->id_, item->address_, item->data_length_) == true)
+              // if (port_to_bulk_read_[port_name]->isAvailable(dxl->id_, item->address_, item->data_length_) == true)
+              // {
+              //   data = port_to_bulk_read_[port_name]->getData(dxl->id_, item->address_, item->data_length_);
+              if (port_to_sync_read_[port_name]->isAvailable(dxl->id_, item->address_, item->data_length_) == true)
               {
-                data = port_to_bulk_read_[port_name]->getData(dxl->id_, item->address_, item->data_length_);
+                data = port_to_sync_read_[port_name]->getData(dxl->id_, item->address_, item->data_length_);
 
                 // change dxl_state
                 if (dxl->present_position_item_ != 0 && item->item_name_ == dxl->present_position_item_->item_name_)
@@ -1173,7 +1174,10 @@ void RobotisController::process()
                   dxl->dxl_state_->goal_torque_ = dxl->convertValue2Torque(data);
                 else
                   dxl->dxl_state_->bulk_read_table_[item->item_name_] = data;
+                std::cout << "Item available" << item->address_ << "\t" << data << std::endl;
               }
+              else
+                std::cout << "Item unavailable" << item->address_ << std::endl;
             }
 
             // -> update time stamp to Robot->dxls[]->dynamixel_state.update_time_stamp
