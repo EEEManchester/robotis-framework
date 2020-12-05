@@ -33,6 +33,7 @@ include_directories(
 )
 
 add_executable(test_manager src/test_manager.cpp)
-target_link_libraries(test_manager
-  ${catkin_LIBRARIES}
-)
+target_link_libraries(test_manager ${catkin_LIBRARIES})
+
+add_executable(test_manager_light src/test_manager_light.cpp)
+target_link_libraries(test_manager_light ${catkin_LIBRARIES})

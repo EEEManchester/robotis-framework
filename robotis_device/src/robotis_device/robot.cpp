@@ -131,7 +131,7 @@ Robot::Robot(std::string robot_file_path, std::string dev_desc_dir_path)
       else if (session == SESSION_DEVICE_INFO)
       {
         std::vector<std::string> tokens = split(input_str, '|');
-        if (tokens.size() != 8)
+        if (tokens.size() < 7)
           continue;
 
         if (tokens[0] == DYNAMIXEL)
@@ -181,14 +181,18 @@ Robot::Robot(std::string robot_file_path, std::string dev_desc_dir_path)
               }
             }
           }
+          // Skip indirect sync write if its not been set in .robot
+          if (tokens.size() != 8)
+            continue;
+
           // Indirect Sync Write
           std::map<std::string, ControlTableItem *>::iterator indirect_it = dxl->ctrl_table_.find(INDIRECT_ADDRESS_1);
           if (indirect_it != dxl->ctrl_table_.end())    // INDIRECT_ADDRESS_1 exist
           {
             std::cout << "Indirect Sync Write: " << tokens[7] << std::endl;
 
+            // TODO: A way to set this address automatically
             uint16_t indirect_data_addr = 578;
-            // uint16_t indirect_data_addr = dxl->ctrl_table_[INDIRECT_DATA_29]->address_ + ;
             
             std::vector<std::string> sub_tokens = split(tokens[7], ',');
             for (int _i = 0; _i < sub_tokens.size(); _i++)

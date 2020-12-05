@@ -33,6 +33,7 @@ include_directories(
 )
 
 add_executable(joint_manager src/joint_manager.cpp)
-target_link_libraries(joint_manager
-  ${catkin_LIBRARIES}
-)
+target_link_libraries(joint_manager ${catkin_LIBRARIES})
+
+add_executable(joint_manager_light src/joint_manager_light.cpp)
+target_link_libraries(joint_manager_light ${catkin_LIBRARIES})

@@ -36,7 +36,7 @@ pkg_check_modules(yaml_cpp yaml-cpp REQUIRED)
 ################################################################################
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES robotis_controller
+  LIBRARIES robotis_controller robotis_controller_light
   CATKIN_DEPENDS roscpp roslib sensor_msgs std_msgs robotis_framework_common
 )
 
@@ -53,10 +53,20 @@ add_library(robotis_controller src/robotis_controller/robotis_controller.cpp)
 add_dependencies(robotis_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(robotis_controller ${yaml_cpp_LIBRARIES} ${catkin_LIBRARIES})
 
+add_library(robotis_controller_light src/robotis_controller/robotis_controller_light.cpp)
+add_dependencies(robotis_controller_light ${catkin_EXPORTED_TARGETS})
+target_link_libraries(robotis_controller_light ${yaml_cpp_LIBRARIES} ${catkin_LIBRARIES})
+
 ################################################################################
 # Install
 ################################################################################
 install(TARGETS robotis_controller
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS robotis_controller_light
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

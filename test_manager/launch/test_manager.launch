@@ -10,7 +10,7 @@
     <param name="init_file_path"    value="$(find test_manager)/config/dxl_init.yaml"/>
 
     <!-- Joint Manager -->
-    <node name="dxl_manager_node" pkg="test_manager" type="test_manager" output="screen"/>
+    <node name="dxl_manager_node" pkg="test_manager" type="test_manager_light" output="screen"/>
 
     <!-- Torque server - enable/disable torque -->
     <node name="dxl_server" pkg="test_manager" type="torque_server.py" output="screen" args="15.0"/>
