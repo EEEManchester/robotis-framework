@@ -2,6 +2,17 @@
 Changelog for package robotis_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+x.0.2 (2020-12-10)
+-----------
+* Added indirect sync read for joint states
+* Added indirect sync write for setting goal for different items
+* Contributors: Wei Cheah
+
+x.0.1 (2020-01-01)
+-----------
+* Added sync_write_multi and sync_write_multi_float feature
+* Contributors: Wei Cheah
+
 0.2.6 (2017-08-09)
 -----------
 * multi thread bug fixed.

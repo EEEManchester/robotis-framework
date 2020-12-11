@@ -32,7 +32,8 @@
  * robotis_controller.h
  *
  *  Created on: 2016. 1. 15.
- *      Author: zerom
+ *  Original Author: zerom
+ *  
  */
 
 #ifndef ROBOTIS_CONTROLLER_ROBOTIS_CONTROLLER_H_
@@ -45,7 +46,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/JointState.h>
-
+#include <chrono>
 #include "robotis_controller_msgs/WriteControlTable.h"
 #include "robotis_controller_msgs/SyncWriteItem.h"
 #include "robotis_controller_msgs/SyncWriteMulti.h"       // wilson added
@@ -80,6 +81,7 @@ private:
   boost::thread   set_module_thread_;
   boost::mutex    queue_mutex_;
 
+  bool            enable_sync_read_;
   bool            using_sync_read_;
   bool            using_indirect_sync_write_;
   bool            init_pose_loaded_;
@@ -112,21 +114,14 @@ public:
   /* bulk read */
   std::map<std::string, dynamixel::GroupBulkRead *>   port_to_bulk_read_;
 
+  /* sync read */
+  std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
+
   /* sync write */
-  // dynamixel::GroupSyncWrite *group_sync_write_indirect_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_indirect_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_current_;
-  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_p_gain_;
-  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_i_gain_;
-  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_d_gain_;
-  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_p_gain_;
-  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_i_gain_;
-  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_d_gain_;
-
-  /* sync read */
-  std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
 
   /* publisher */
   ros::Publisher  goal_joint_state_pub_;

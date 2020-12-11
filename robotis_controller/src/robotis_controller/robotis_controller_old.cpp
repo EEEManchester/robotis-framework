@@ -38,7 +38,7 @@
 #include <ros/package.h>
 #include <ros/callback_queue.h>
 
-#include "robotis_controller/robotis_controller_light.h"
+#include "robotis_controller/robotis_controller.h"
 
 using namespace robotis_framework;
 
@@ -91,11 +91,41 @@ void RobotisController::initializeSyncWrite()
     if (it.second != NULL)
       it.second->clearParam();
   }
+  // for (auto& it : port_to_sync_write_position_p_gain_)
+  // {
+  //   if (it.second != NULL)
+  //     it.second->clearParam();
+  // }
+  // for (auto& it : port_to_sync_write_position_i_gain_)
+  // {
+  //   if (it.second != NULL)
+  //     it.second->clearParam();
+  // }
+  // for (auto& it : port_to_sync_write_position_d_gain_)
+  // {
+  //   if (it.second != NULL)
+  //     it.second->clearParam();
+  // }
   for (auto& it : port_to_sync_write_velocity_)
   {
     if (it.second != NULL)
       it.second->clearParam();
   }
+  // for (auto& it : port_to_sync_write_velocity_p_gain_)
+  // {
+  //   if (it.second != NULL)
+  //     it.second->clearParam();
+  // }
+  // for (auto& it : port_to_sync_write_velocity_i_gain_)
+  // {
+  //   if (it.second != NULL)
+  //     it.second->clearParam();
+  // }
+  // for (auto& it : port_to_sync_write_velocity_d_gain_)
+  // {
+  //   if (it.second != NULL)
+  //     it.second->clearParam();
+  // }
   for (auto& it : port_to_sync_write_current_)
   {
     if (it.second != NULL)
@@ -224,6 +254,33 @@ bool RobotisController::initialize(const std::string robot_file_path, const std:
                                             default_device->goal_position_item_->data_length_);
       }
 
+      // if (default_device->position_p_gain_item_ != 0)
+      // {
+      //   port_to_sync_write_position_p_gain_[port_name]
+      //       = new dynamixel::GroupSyncWrite(port,
+      //                                       default_pkt_handler,
+      //                                       default_device->position_p_gain_item_->address_,
+      //                                       default_device->position_p_gain_item_->data_length_);
+      // }
+
+      // if (default_device->position_i_gain_item_ != 0)
+      // {
+      //   port_to_sync_write_position_i_gain_[port_name]
+      //       = new dynamixel::GroupSyncWrite(port,
+      //                                       default_pkt_handler,
+      //                                       default_device->position_i_gain_item_->address_,
+      //                                       default_device->position_i_gain_item_->data_length_);
+      // }
+
+      // if (default_device->position_d_gain_item_ != 0)
+      // {
+      //   port_to_sync_write_position_d_gain_[port_name]
+      //       = new dynamixel::GroupSyncWrite(port,
+      //                                       default_pkt_handler,
+      //                                       default_device->position_d_gain_item_->address_,
+      //                                       default_device->position_d_gain_item_->data_length_);
+      // }
+
       if (default_device->goal_velocity_item_ != 0)
       {
         port_to_sync_write_velocity_[port_name]
@@ -232,6 +289,33 @@ bool RobotisController::initialize(const std::string robot_file_path, const std:
                                             default_device->goal_velocity_item_->address_,
                                             default_device->goal_velocity_item_->data_length_);
       }
+
+      // if (default_device->velocity_p_gain_item_ != 0)
+      // {
+      //   port_to_sync_write_velocity_p_gain_[port_name]
+      //       = new dynamixel::GroupSyncWrite(port,
+      //                                       default_pkt_handler,
+      //                                       default_device->velocity_p_gain_item_->address_,
+      //                                       default_device->velocity_p_gain_item_->data_length_);
+      // }
+
+      // if (default_device->velocity_i_gain_item_ != 0)
+      // {
+      //   port_to_sync_write_velocity_i_gain_[port_name]
+      //       = new dynamixel::GroupSyncWrite(port,
+      //                                       default_pkt_handler,
+      //                                       default_device->velocity_i_gain_item_->address_,
+      //                                       default_device->velocity_i_gain_item_->data_length_);
+      // }
+
+      // if (default_device->velocity_d_gain_item_ != 0)
+      // {
+      //   port_to_sync_write_velocity_d_gain_[port_name]
+      //       = new dynamixel::GroupSyncWrite(port,
+      //                                       default_pkt_handler,
+      //                                       default_device->velocity_d_gain_item_->address_,
+      //                                       default_device->velocity_d_gain_item_->data_length_);
+      // }
 
       if (default_device->goal_current_item_ != 0)
       {
@@ -385,8 +469,6 @@ void RobotisController::initializeDevice(const std::string init_file_path)
   std::vector<int> no_read_items;   // number of items to bulk read
   std::vector<int> bulk_read_size;  // total address length to read
   int syncread_indirect_addr = 0;
-  int syncwrite_indirect_addr = 0;
-  int syncwrite_indirect_data = 0;
   
   // Cycle through all actuators, sets the indirect address in RAM
   for (auto& it : robot_->dxls_)

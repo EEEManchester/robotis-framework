@@ -32,12 +32,11 @@
  * robotis_controller.h
  *
  *  Created on: 2016. 1. 15.
- *  Original Author: zerom
- *  
+ *      Author: zerom
  */
 
-#ifndef ROBOTIS_CONTROLLER_ROBOTIS_CONTROLLER_LIGHT_H_
-#define ROBOTIS_CONTROLLER_ROBOTIS_CONTROLLER_LIGHT_H_
+#ifndef ROBOTIS_CONTROLLER_ROBOTIS_CONTROLLER_H_
+#define ROBOTIS_CONTROLLER_ROBOTIS_CONTROLLER_H_
 
 
 #include <ros/ros.h>
@@ -113,14 +112,21 @@ public:
   /* bulk read */
   std::map<std::string, dynamixel::GroupBulkRead *>   port_to_bulk_read_;
 
-  /* sync read */
-  std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
-
   /* sync write */
+  // dynamixel::GroupSyncWrite *group_sync_write_indirect_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_indirect_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_;
   std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_current_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_p_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_i_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_position_d_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_p_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_i_gain_;
+  // std::map<std::string, dynamixel::GroupSyncWrite *>  port_to_sync_write_velocity_d_gain_;
+
+  /* sync read */
+  std::map<std::string, dynamixel::GroupSyncRead *>   port_to_sync_read_;
 
   /* publisher */
   ros::Publisher  goal_joint_state_pub_;
