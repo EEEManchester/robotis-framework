@@ -283,11 +283,10 @@ void RobotisController::initializeDevice(const std::string init_file_path)
   try
   {
     doc = YAML::LoadFile(init_file_path.c_str());
-
     for (YAML::const_iterator it_doc = doc.begin(); it_doc != doc.end(); it_doc++)
     {
       std::string joint_name = it_doc->first.as<std::string>();
-
+      
       YAML::Node joint_node = doc[joint_name];
       if (joint_node.size() == 0)
         continue;
@@ -371,9 +370,13 @@ void RobotisController::initializeDevice(const std::string init_file_path)
         }
       }
     }
-  } catch (const std::exception& e)
+  } 
+  catch(const YAML::ParserException& ex) {
+    ROS_WARN("%s\n", ex.what());
+  }
+  catch (const std::exception& e)
   {
-    ROS_INFO("Dynamixel Init file not found.");
+    ROS_WARN("Dynamixel Init file not found.");
   }
 
   // [ BulkRead ] StartAddress : Present Position , Length : 10 ( Position/Velocity/Current )
