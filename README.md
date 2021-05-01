@@ -1,10 +1,8 @@
 # ROBOTIS-Framework
-ROBOTIS Framework GIT REP MAIN
 
 This is the modified version from ROBOTIS ROS Framework (https://github.com/ROBOTIS-GIT/ROBOTIS-Framework). 
 
-This modified library has only been tested with the MX-64 motors running protocol 2.0. 
-
+This modified library has only been tested with the MX-64 and XM-430 motors running protocol 2.0. 
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
