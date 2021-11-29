@@ -1,16 +1,34 @@
 # ROBOTIS-Framework
 
-This is the modified version from ROBOTIS ROS Framework (https://github.com/ROBOTIS-GIT/ROBOTIS-Framework). 
+This is the modified version from [ROBOTIS ROS Framework](https://github.com/ROBOTIS-GIT/ROBOTIS-Framework), tested with the MX-64 (`master` branch) and XM-430 (`feature_indirect` branch) actuators running protocol 2.0. 
 
-This modified library has only been tested with the MX-64 and XM-430 motors running protocol 2.0. 
+This package is responsible for following functions:
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Initialization
+  - Load robot information file(.robot) and initialize the robot with the [[robotis_device]] package.
+  - Configures initial value for each joint by loading initialization file(.yaml).
+  - Gets ready to use sync write and bulk read for the joint control.
+
+Periodically call process() function by the timer (default cycle: 8 msec)
+  - The startTimer() creates a thread that calls process() function periodically.
+
+What process() does :
+  - Receives status packets with Bulk Read to get status of each sensors and joints.
+  - Transfers the result value of the Motion Module with Sync Write.
+  - Transfers instruction packet to each sensors and joints with Bulk Read.
+  - Calls process() function of the Sensor Module in the list and saves the result value.
+  - Calls process() function of the Motion Module in the list and saves the result value.
+  - Publishes current value and target value in the form of ROS Topic.
+
+
+Note that we are using a modified version of this package, there will be some differences to the e-manual
+
+## Quick Start Guide
+Assuming your actuators `baud rate` and `ID` have been configured in Windows using the Dynamixel Wizard:
+1. Update the `test_manager/config/test.robot` and `test_manager/config/dxl_init.yaml` file. 
+2. Set USB and C++ timer thread permission (further information available in Wiki).
+3. Start the controller:
+
+        roslaunch test_manager test_manager.launch
+
+Detailed instructions on the set up and usage is available in the Wiki. 
