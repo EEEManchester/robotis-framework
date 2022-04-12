@@ -19,6 +19,10 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
 )
 
+# Link against system catkin yaml-cpp if installed.
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CATKIN_DEVEL_PREFIX}/lib/pkgconfig")
+find_package(PkgConfig)
+pkg_check_modules(yaml_cpp yaml-cpp REQUIRED)
 # Resolve system dependency on yaml-cpp, which apparently does not
 # provide a CMake find_package() module.
 find_package(PkgConfig REQUIRED)
